@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 
-const size_t pageSize = 4096;
+const size_t PAGE_SIZE = 4096;
 
 typedef struct heapchunk
 {
@@ -19,18 +19,21 @@ typedef struct heapinfo
     uint32_t avail;
 } heapinfo_t;
 
-int initHeap(heapinfo_t* heap)
+heapinfo_t* heap = { 0 };
+
+int initHeap()
 {
-    void* start = mmap(NULL, pageSize, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    void* start = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
     // Wilderness chunk
     heapchunk_t* first = (heapchunk_t*)(start);
 
-    first->size = pageSize - sizeof(heapchunk_t);
+    first->size = PAGE_SIZE - sizeof(heapchunk_t);
     first->inUse = false;
 
     heap->start = first;
-    heap->next = heap;
+    heap->avail = PAGE_SIZE;
+    // heap->next = heap;
 
     return 1;
 }
@@ -39,21 +42,27 @@ int initHeap(heapinfo_t* heap)
 // 8 should be size of word on 64 bit machines
 size_t align(size_t size)
 {
-    return (size + 8 - 1) & ~(8 - 1);
+    return (size + sizeof(int*) - 1) & ~(sizeof(int*) - 1);
 }
 
 void* mylloc(size_t size)
 {
+    //? Need to align?
     size = align(size);
-    return (NULL);
+    heapchunk_t* chunk;
+    chunk->size = size;
+    chunk->inUse = true;
+
+    return (void*)(-1);
 }
 
 int main(void)
 {
-    printf("%d\n", align(3));
-    printf("%d\n", align(8));
-    printf("%d\n", align(12));
-    printf("%d\n", align(16));
+    printf("%zu\n", align(3));
+    printf("%zu\n", align(8));
+    printf("%zu\n", align(12));
+    printf("%zu\n", align(16));
     // char* test = mylloc(16);
+    printf("sizeof: %zu\n", sizeof(int*));
     return 0;
 }
